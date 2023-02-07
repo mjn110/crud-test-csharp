@@ -1,0 +1,78 @@
+﻿@page "/add"
+@using System.Text.Json
+@using System.Text.Json.Serialization
+@using Mc2.CrudTest.Shared.Entities;
+@using Mc2.CrudTest.Presentation.Server;
+@using Newtonsoft.Json;
+@using static System.Net.WebRequestMethods;
+@inject HttpClient ClientFactory;
+@inject NavigationManager Navigate;
+
+
+<h1>Add Customer</h1>
+<p class="mb-3">You can add a new customer in this page by fill the form.</p>
+
+<Index Customers="customers" ishidden="d-none"></Index>
+@*<p>Current count: @_currentCount.ToString()</p>
+
+<button class="btn btn-primary" @onclick="IncrementCount">Click me</button>*@
+<EditForm Model="@customer" OnValidSubmit="AddCustomer">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <div class="row mt-5">
+        <div class="col-12 col-md-6 mb-3">
+            <InputText required @bind-Value="customer.Firstname" class="form-control" placeholder="First name"></InputText>
+        </div>
+        <div class="col-12 col-md-6 mb-3">
+            <InputText required @bind-Value="customer.Lastname" class="form-control" placeholder="Last name"></InputText>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12 col-md-6 mb-3">
+            <div class="input-group">
+                <div class="input-group-prepend">
+                    <label class="input-group-text" for="inputGroupSelect01">Date of birth</label>
+                </div>
+                <InputDate required @bind-Value="customer.DateOfBirth" class="form-control" placeholder="Date of Birth"></InputDate>
+            </div>
+        </div>
+        <div class="col-12 col-md-6 mb-3">
+            <InputText required @bind-Value="customer.PhoneNumber" class="form-control" placeholder="Phone number"></InputText>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12 col-md-6 mb-3">
+            <InputText required @bind-Value="customer.Email" class="form-control" placeholder="Email"></InputText>
+        </div>
+        <div class="col-12 col-md-6 mb-3">
+            <InputText required @bind-Value="customer.BankAccountNumber" class="form-control" placeholder="Bank account number"></InputText>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            <button class="btn btn-success">
+                Add
+            </button>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+    Customer customer = new Customer();
+
+    public IEnumerable<Customer> customers { get; set; }
+
+    private async Task AddCustomer()
+    {
+        var response = await ClientFactory.PostAsJsonAsync("https://localhost:44315/api/Customer", customer).ConfigureAwait(false);
+        response.EnsureSuccessStatusCode();
+
+        if (response.IsSuccessStatusCode)
+        {
+            using var responseStream = await response.Content.ReadAsStreamAsync();
+            customers = await ClientFactory.GetFromJsonAsync<IEnumerable<Customer>>("https://localhost:44315/api/Customer/").ConfigureAwait(false);
+            StateHasChanged();
+        }
+        StateHasChanged();
+    }
+}

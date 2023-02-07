@@ -1,0 +1,87 @@
+﻿@page "/edit/{customerid}"
+@using Mc2.CrudTest.Shared.Entities;
+@using System.Text.Json
+@using System.Text.Json.Serialization
+@inject HttpClient ClientFactory;
+@inject NavigationManager Navigate;
+<h1>Edit Customer</h1>
+<p class="mb-3">You can add a new customer in this page by fill the form.</p>
+@if(getCustomersError)
+{
+    <p class="text-danger">No customer found!</p>
+}
+<EditForm Model="@customer" OnValidSubmit="EditCustomer">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <div class="row mt-5">
+@*        <div class="d-none">
+            <InputNumber @bind-Value="customer.CustomerId"></InputNumber>
+        </div>*@
+        <div class="col-12 col-md-6 mb-3">
+            <InputText required @bind-Value="customer.Firstname" class="form-control" placeholder="First name"></InputText>
+        </div>
+        <div class="col-12 col-md-6 mb-3">
+            <InputText required @bind-Value="customer.Lastname" class="form-control" placeholder="Last name"></InputText>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12 col-md-6 mb-3">
+            <InputDate required @bind-Value="customer.DateOfBirth" class="form-control" placeholder="Date of Birth"></InputDate>
+        </div>
+        <div class="col-12 col-md-6 mb-3">
+            <InputText required @bind-Value="customer.PhoneNumber" class="form-control" placeholder="Phone Number"></InputText>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12 col-md-6 mb-3">
+            <InputText required @bind-Value="customer.Email" class="form-control" placeholder="Email"></InputText>
+        </div>
+        <div class="col-12 col-md-6 mb-3">
+            <InputText required @bind-Value="customer.BankAccountNumber" class="form-control" placeholder="Bank account number"></InputText>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            <button class="btn btn-success" @onclick="EditCustomer">
+                Add
+            </button>
+        </div>
+    </div>
+</EditForm>
+@code {
+    Customer customer = new Customer();
+
+    [Parameter]
+    public string customerid { get; set; }
+
+    private bool getCustomersError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        GetCustomer();
+    }
+
+    private async Task EditCustomer()
+    {
+        var response = await ClientFactory.PutAsJsonAsync<Customer>("https://localhost:44315/api/Customer/"+customerid,customer).ConfigureAwait(false);
+        if(response.IsSuccessStatusCode)
+        {
+            Navigate.NavigateTo("/");
+        }
+    }
+
+    private async Task GetCustomer()
+    {
+        var response = await ClientFactory.GetFromJsonAsync<Customer>("https://localhost:44315/api/Customer/" + customerid).ConfigureAwait(false);
+
+        if (response != null)
+        {
+            customer = response;
+            StateHasChanged();
+        }
+        else
+        {
+            getCustomersError = true;
+        }
+    }
+}

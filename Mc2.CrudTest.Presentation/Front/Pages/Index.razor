@@ -1,7 +1,88 @@
 ﻿@page "/"
+@using System.Text.Json
+@using System.Text.Json.Serialization
+@using Mc2.CrudTest.Shared.Entities;
+@using Mc2.CrudTest.Presentation.Server;
+@using static System.Net.WebRequestMethods;
+@inject HttpClient ClientFactory;
+@inject NavigationManager Navigate;
 
-<h1>Hello candidate!</h1>
+<h1 class="@ishidden">List of customers</h1>
 
-Feel free to change the solution the way you think is right.
+<p class="@ishidden">You can see a list of all cutomers.</p>
 
-<SurveyPrompt Title="CrudTest" />
+<table class="table">
+    <thead>
+        <tr>
+            <th>Id</th>
+            <th>Name</th>
+            <th>Edit</th>
+            <th>Delete</th>
+        </tr>
+    </thead>
+    <tbody class="align-content-center">
+        @if (getCustomersError)
+        {
+            <p>Unable to get customers from database. Please try again later.</p>
+        }
+        else
+        {
+            @if (Customers != null)
+            {
+
+                foreach (var item in Customers)
+                {
+                    <tr>
+                        <td class="align-middle">@item.CustomerId</td>
+                        <td class="align-middle">@item.Firstname</td>
+                        <td>
+                            <button class="btn btn-primary" @onclick="(() => GoToEdit(item.CustomerId))">Edit</button>
+                        </td>
+                        <td>
+                            <button class="btn btn-danger" @onclick="@(e => DeleteCustomer(item.CustomerId))">Delete</button>
+                        </td>
+                    </tr>
+                }
+            }
+        }
+    </tbody>
+</table>
+
+@code {
+    [Parameter]
+    public IEnumerable<Customer> Customers { get; set; } = Array.Empty<Customer>();
+
+    [Parameter]
+    public string ishidden { get; set; } = "";
+
+    private bool getCustomersError;
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        var response = await ClientFactory.GetFromJsonAsync<IEnumerable<Customer>>("https://localhost:44315/api/Customer/").ConfigureAwait(false);
+
+        if (response != null)
+        {
+            Customers = response;
+        }
+        else
+        {
+            getCustomersError = true;
+        }
+        StateHasChanged();
+    }
+
+    public async Task DeleteCustomer(int id)
+    {
+        var response = await ClientFactory.DeleteAsync("https://localhost:44315/api/Customer/"+id).ConfigureAwait(false);
+        Customers = await ClientFactory.GetFromJsonAsync<IEnumerable<Customer>>("https://localhost:44315/api/Customer/").ConfigureAwait(false);
+        StateHasChanged();
+    }
+
+    public void GoToEdit(int customerid)
+    {
+        Navigate.NavigateTo($"/edit/{customerid}");
+    }
+
+}
